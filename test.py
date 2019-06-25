@@ -11,7 +11,10 @@ tf.disable_v2_behavior()
 import tensorflow
 
 num = int(input("epoch nums:"))
-(data, labels) = pickle.load(  open( "flatten", "rb" ) )
+(origin_data, origin_labels) = pickle.load(  open( "data_30000", "rb" ) )
+
+data = origin_data[:25000]
+labels = origin_labels[:25000]
 
 # Initialize placeholders 
 x = tf.placeholder(dtype = tf.float32, shape = [None,200])
@@ -19,7 +22,7 @@ y = tf.placeholder(dtype = tf.int32, shape = [None])
 
 
 # Fully connected layer 
-logits = tensorflow.contrib.layers.fully_connected(data, 62, tf.nn.relu)
+logits = tensorflow.contrib.layers.fully_connected(data, 40, tf.nn.relu)
 
 # Define a loss function
 loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels = y, 
@@ -80,37 +83,32 @@ performance_summaries = tf.summary.merge([tf_loss_summary,tf_accuracy_summary])
 summ_writer = tf.summary.FileWriter(os.path.join('summaries','first'), sess.graph)
 
 
-'''
-for i in range(300):
-        print('EPOCH', i)
-        _, accuracy_val = sess.run([train_op, accuracy], feed_dict={x: images28, y: labels})
-        if i % 10 == 0:
-            print("Loss: ", loss)
-        print('DONE WITH EPOCH')
-saver = tf.train.Saver()
-save_path = saver.save(sess, "model.ckpt")
-'''
+
 for i in range(int(num)):
         if i == 0:
-            _, accuracy_val, loss_val = sess.run([train_op, accuracy, loss], feed_dict={x: images28, y: labels, tf_learning_rate: 0.0001})
+            _, accuracy_val, loss_val = sess.run([train_op, accuracy, loss], feed_dict={x: data, y: labels, tf_learning_rate: 0.0001})
           #  summ_writer.add_summary(loss_val, i)
             
 
-        _, accuracy_val, loss_val = sess.run([train_op, accuracy, loss], feed_dict={x: images28, y: labels, tf_learning_rate: 0.0001})
+        _, accuracy_val, loss_val = sess.run([train_op, accuracy, loss], feed_dict={x: data, y: labels, tf_learning_rate: 0.0001})
         if i % 100 == 0:
-            print("                                     Loss: ", loss_val)
+            print(" Loss: ", loss_val)
 
 
 
+saver = tf.train.Saver()
+save_path = saver.save(sess	, "model_30000_data_2500_epoc")
 
-
-test_data,test_labels =  data[25000:], labels[25000:]
+test_data,test_labels =  origin_data[25000:], origin_labels[25000:]
 
 # Run predictions against the full test set.
 predicted = sess.run([correct_pred], feed_dict={x: test_data})[0]
 
 # Calculate correct matches 
 match_count = sum([int(y == y_) for y, y_ in zip(test_labels, predicted)])
+
+print(list(predicted))
+print(test_labels)
 
 # Calculate the accuracy
 accuracy = match_count / len(test_labels)
